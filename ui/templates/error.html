@@ -1,0 +1,4 @@
+{% extends 'base.html' %}
+{% from 'components.html' import icon %}
+{% block title %}No se pudo completar la acción{% endblock %}
+{% block content %}<section class="error-page panel"><span class="eyebrow">ERROR {{ code }}</span><h1>Hagamos una pausa.</h1><p>{{ message }}</p><a class="button primary" href="{{ url_for('tickets' if current_user else 'login') }}">{{ icon('back',17) }} {{ 'Volver a mi bandeja' if current_user else 'Volver al acceso' }}</a></section>{% endblock %}

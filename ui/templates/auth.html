@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% from 'components.html' import icon, csrf %}
+{% block title %}{{ 'Crear cuenta' if register else 'Iniciar sesión' }}{% endblock %}
+{% block content %}
+<div class="auth-layout">
+  <section class="auth-story">
+    <a class="brand" href="{{ url_for('index') }}"><span class="brand-mark">{{ icon('tickets', 25) }}</span><span>SurSoporte<small>MESA DE AYUDA</small></span></a>
+    <div class="story-copy"><span class="eyebrow">CONECTAMOS PROBLEMAS CON SOLUCIONES</span><h1>Tu equipo.<br>Tu soporte.<br><span>Todo en un lugar.</span></h1><p>Una conversación clara, un seguimiento completo y la ayuda que necesitas para seguir adelante.</p>
+    <div class="story-ticket"><span class="story-ticket-icon">{{ icon('check', 24) }}</span><div><strong>Del primer mensaje a la solución</strong><small>Cada paso queda registrado.</small></div></div></div>
+    <div class="story-footer">SURSOPORTE LTDA. <span>Mesa de ayuda interna</span></div>
+  </section>
+  <section class="auth-form-panel"><div class="auth-form-inner">
+    <span class="eyebrow">{{ 'EMPECEMOS' if register else 'BIENVENIDO DE VUELTA' }}</span>
+    <h2>{{ 'Crea tu cuenta' if register else 'Inicia sesión' }}</h2>
+    <p class="muted">{{ 'Registra tus solicitudes y conversa con el equipo de soporte.' if register else 'Accede a tus tickets y continúa donde lo dejaste.' }}</p>
+    {% if error %}<div class="notice error" role="alert">{{ error }}</div>{% endif %}
+    <form method="post" class="stacked-form">
+      {{ csrf() }}
+      <label for="username">Usuario</label><input id="username" name="username" autocomplete="username" minlength="3" maxlength="50" value="{{ request.form.get('username', '') }}" placeholder="Tu nombre de usuario" required>
+      {% if register %}<label for="email">Correo electrónico</label><input id="email" name="email" type="email" autocomplete="email" maxlength="254" value="{{ request.form.get('email', '') }}" placeholder="nombre@empresa.cl" required>{% endif %}
+      <label for="password">Contraseña</label><input id="password" name="password" type="password" autocomplete="{{ 'new-password' if register else 'current-password' }}" {% if register %}minlength="10"{% endif %} maxlength="128" placeholder="{{ 'Al menos 10 caracteres' if register else 'Tu contraseña' }}" required>
+      {% if register %}<p class="field-help">Tu cuenta se creará como publicador. Un supervisor puede habilitar otros permisos.</p>{% endif %}
+      <button class="button primary full-width">{{ 'Crear cuenta' if register else 'Entrar a mi espacio' }} {{ icon('arrow', 17) }}</button>
+    </form>
+    <p class="auth-switch">{{ '¿Ya tienes una cuenta?' if register else '¿Aún no tienes cuenta?' }} <a href="{{ url_for('login' if register else 'register') }}">{{ 'Inicia sesión' if register else 'Regístrate' }}</a></p>
+    <p class="auth-footnote">Tu trabajo continúa. Nosotros te acompañamos.</p>
+  </div></section>
+</div>
+{% endblock %}

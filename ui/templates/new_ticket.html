@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% from 'components.html' import icon, csrf %}
+{% block title %}Nuevo ticket{% endblock %}
+{% block content %}
+<a class="back-link" href="{{ url_for('tickets') }}">{{ icon('back',17) }} Volver a mi bandeja</a>
+<div class="page-heading"><div><span class="eyebrow">NUEVA SOLICITUD</span><h1>Cuéntanos qué ocurre</h1><p>Un poco de contexto nos ayuda a encontrar la solución.</p></div></div>
+<div class="compose-layout"><section class="panel compose-panel"><h2>Detalles del ticket</h2><p class="muted">Los campos con * son obligatorios.</p>
+{% if error %}<div class="notice error" role="alert">{{ error }}</div>{% endif %}
+<form method="post" class="stacked-form">{{ csrf() }}
+<label for="titulo">Título *</label><input id="titulo" name="titulo" maxlength="200" required placeholder="Ej. No puedo conectarme a la impresora" value="{{ request.form.get('titulo', '') }}">
+<label for="descripcion">Descripción *</label><textarea id="descripcion" name="descripcion" rows="9" maxlength="10000" required placeholder="¿Qué intentabas hacer? ¿Qué pasó? Incluye los detalles que puedan ayudarnos.">{{ request.form.get('descripcion', '') }}</textarea>
+<p class="field-help">Hasta 10.000 caracteres. Evita incluir contraseñas u otros datos sensibles.</p>
+<div class="form-actions"><a class="button secondary" href="{{ url_for('tickets') }}">Cancelar</a><button class="button primary">Crear ticket {{ icon('arrow',17) }}</button></div></form></section>
+<aside class="help-card"><span class="eyebrow">UN BUEN PUNTO DE PARTIDA</span><h3>Los detalles hacen la diferencia.</h3><ol><li>Describe el problema de forma concreta.</li><li>Indica cuándo comenzó y a quién afecta.</li><li>Cuéntanos qué soluciones ya probaste.</li></ol><hr><p>Al crear el ticket se abrirá una conversación con el equipo. Cada avance quedará en su historial.</p></aside></div>
+{% endblock %}

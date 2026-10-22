@@ -1,0 +1,38 @@
+{% from 'components.html' import icon, csrf %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>{% block title %}Mesa de ayuda{% endblock %} · SurSoporte</title>
+  <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+<body class="{% if not current_user %}guest{% endif %}">
+<a class="skip-link" href="#main">Saltar al contenido</a>
+{% if current_user %}
+<aside class="sidebar">
+  <a class="brand" href="{{ url_for('tickets') }}"><span class="brand-mark">{{ icon('tickets', 25) }}</span><span>SurSoporte<small>MESA DE AYUDA</small></span></a>
+  <div class="nav-label">ESPACIO DE TRABAJO</div>
+  <nav class="main-nav" aria-label="Principal">
+    <a class="{% if request.endpoint in ['tickets','ticket_detail'] and not request.args.get('alcance') %}active{% endif %}" href="{{ url_for('tickets') }}">{{ icon('tickets') }} Mi bandeja</a>
+    {% if current_user.es_supervisor() %}
+    <a class="{% if request.args.get('alcance') == 'todos' %}active{% endif %}" href="{{ url_for('tickets', alcance='todos') }}">{{ icon('clock') }} Todos los tickets</a>
+    <a class="{% if request.endpoint == 'users' %}active{% endif %}" href="{{ url_for('users') }}">{{ icon('users') }} Equipo y roles</a>
+    {% endif %}
+  </nav>
+  <div class="sidebar-note"><span class="small-dot"></span> Un lugar para cada solución.<p>Crea, conversa y sigue el avance de tus solicitudes.</p></div>
+  <div class="sidebar-account"><span class="avatar">{{ current_user.username[0]|upper }}</span><div><strong>{{ current_user.username }}</strong><small>{{ current_user.role|capitalize }}</small></div>
+    <form method="post" action="{{ url_for('logout') }}">{{ csrf() }}<button class="icon-button" aria-label="Cerrar sesión" title="Cerrar sesión">{{ icon('logout') }}</button></form>
+  </div>
+</aside>
+<div class="workspace">
+  <header class="topbar"><span>Espacio de trabajo <span class="breadcrumb-separator">/</span> <strong>{% block section %}Tickets{% endblock %}</strong></span><span class="topbar-label">SURSOPORTE LTDA.</span></header>
+{% endif %}
+<main id="main" class="{% if current_user %}page{% else %}guest-main{% endif %}">
+  {% if config.get('PREVIEW_MODE') %}<div class="notice neutral preview-notice" role="note">Vista de prueba · datos temporales en memoria, separados de MySQL.</div>{% endif %}
+  {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="notice {{ category }}" role="status">{{ icon('check', 18) }} {{ message }}</div>{% endfor %}{% endwith %}
+  {% block content %}{% endblock %}
+</main>
+{% if current_user %}<footer class="page-footer">SurSoporte <span>Soporte que sigue contigo.</span></footer></div>{% endif %}
+</body></html>

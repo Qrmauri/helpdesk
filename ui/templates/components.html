@@ -1,0 +1,23 @@
+{% macro icon(name, size=20) -%}
+<svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+{% if name == 'tickets' %}<path d="M4 4h16v6a2 2 0 0 0 0 4v6H4v-6a2 2 0 0 0 0-4Z"/><path d="M9 8h6M9 12h4M9 16h6"/>
+{% elif name == 'plus' %}<path d="M12 5v14M5 12h14"/>
+{% elif name == 'arrow' %}<path d="m9 5 7 7-7 7"/>
+{% elif name == 'users' %}<circle cx="9" cy="8" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3M16 5a3 3 0 0 1 0 6M21 21v-3a6 6 0 0 0-3-5"/>
+{% elif name == 'logout' %}<path d="M9 4H4v16h5M13 12h8m-4-4 4 4-4 4"/>
+{% elif name == 'comment' %}<path d="M21 11a9 9 0 0 1-9 9H4l-2 2V11a9 9 0 0 1 19 0Z"/><path d="M7 9h10M7 13h7"/>
+{% elif name == 'clock' %}<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>
+{% elif name == 'check' %}<path d="m5 12 4 4L19 6"/>
+{% elif name == 'back' %}<path d="M20 12H4m6-6-6 6 6 6"/>
+{% else %}<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M8 12h8M12 8v8"/>{% endif %}
+</svg>
+{%- endmacro %}
+{% macro csrf() -%}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{%- endmacro %}
+{% macro badge(state) -%}<span class="badge state-{{ state|lower }}"><span class="status-dot"></span>{{ state|replace('_', ' ')|capitalize }}</span>{%- endmacro %}
+{% macro pagination(page, has_next, endpoint, params={}) -%}
+{% if page > 1 or has_next %}<nav class="pagination" aria-label="Paginación">
+{% if page > 1 %}<a class="button secondary" href="{{ url_for(endpoint, pagina=page-1, **params) }}">Anterior</a>{% endif %}
+<span>Página {{ page }}</span>
+{% if has_next %}<a class="button secondary" href="{{ url_for(endpoint, pagina=page+1, **params) }}">Siguiente</a>{% endif %}
+</nav>{% endif %}
+{%- endmacro %}

@@ -34,3 +34,16 @@ CREATE TABLE tickets (
     CONSTRAINT fk_tickets_agente FOREIGN KEY (asignado_a) REFERENCES usuarios(id),
     CONSTRAINT chk_tickets_estado CHECK (estado IN ('ABIERTO', 'EN_PROCESO', 'EN_ESPERA', 'RESUELTO', 'CERRADO'))
 ) ENGINE=InnoDB;
+
+CREATE TABLE ticket_actividad (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    ticket_id INT NOT NULL,
+    usuario_id INT NOT NULL,
+    tipo VARCHAR(20) NOT NULL,
+    contenido TEXT NOT NULL,
+    creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_actividad_ticket (ticket_id, id),
+    CONSTRAINT fk_actividad_ticket FOREIGN KEY (ticket_id) REFERENCES tickets(id),
+    CONSTRAINT fk_actividad_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+    CONSTRAINT chk_actividad_tipo CHECK (tipo IN ('CREADO', 'ASIGNADO', 'ESTADO', 'COMENTARIO'))
+) ENGINE=InnoDB;

@@ -88,8 +88,15 @@ class AuthService:
         """Actualiza los permisos para no conservar un rol revocado en otra instancia."""
         if self.usuario_actual is None:
             raise ValueError("Debe iniciar sesión.")
+        return self.restaurar_sesion(self.usuario_actual.id)
+
+    def restaurar_sesion(self, user_id):
+        """Carga una identidad desde una sesión firmada sin confiar en un rol del cliente."""
+        self.usuario_actual = None
+        if not isinstance(user_id, int) or isinstance(user_id, bool) or user_id <= 0:
+            raise ValueError("Sesión inválida.")
         with transaction(get_connection) as cursor:
-            row = UserRepository(cursor).buscar_por_id(self.usuario_actual.id)
+            row = UserRepository(cursor).buscar_por_id(user_id)
         if row is None:
             self.usuario_actual = None
             raise ValueError("La cuenta ya no existe. Inicie sesión nuevamente.")

@@ -61,6 +61,7 @@ class Menu:
         while True:
             print(f"\n===== {usuario.role} - {usuario.username} =====")
             print("1. Crear ticket\n2. Ver mis tickets")
+            print("8. Ver detalle e historial\n9. Añadir comentario")
             if usuario.es_supervisor():
                 print("3. Ver todos los tickets\n4. Asignar ticket a agente")
                 print("6. Ver usuarios\n7. Cambiar rol de usuario")
@@ -85,6 +86,10 @@ class Menu:
                     self.ver_usuarios()
                 elif opcion == "7" and usuario.es_supervisor():
                     self.cambiar_rol()
+                elif opcion == "8":
+                    self.ver_historial()
+                elif opcion == "9":
+                    self.comentar_ticket()
                 else:
                     print("Opción inválida.")
             except (ValueError, ErrorPersistencia) as exc:
@@ -149,6 +154,29 @@ class Menu:
         role = input("Nuevo rol (PUBLICADOR, AGENTE, SUPERVISOR): ").strip().upper()
         self.auth.cambiar_rol(user_id, role)
         print("Rol actualizado.")
+
+    def ver_historial(self):
+        ticket_id = self._leer_id("ID del ticket: ")
+        ticket = self.ticket.obtener_ticket(ticket_id)
+        print(f"\n{ticket}\n{ticket.descripcion}")
+        offset = 0
+        while True:
+            actividad = self.ticket.listar_actividad(ticket_id, offset=offset)
+            if not actividad:
+                print("No hay más actividad registrada.")
+                return
+            for evento in actividad:
+                print(f"\n{evento['creado_en']} | {evento['autor']} | {evento['tipo']}")
+                print(evento["contenido"])
+            if len(actividad) < 50 or input("N para siguiente página; Enter para volver: ").strip().upper() != "N":
+                return
+            offset += 50
+
+    def comentar_ticket(self):
+        ticket_id = self._leer_id("ID del ticket: ")
+        contenido = input("Comentario: ")
+        self.ticket.agregar_comentario(ticket_id, contenido)
+        print("Comentario publicado.")
 
     @staticmethod
     def _leer_id(prompt):

@@ -1,5 +1,6 @@
 from infra.db import get_connection, transaction
 from src.domain.ticket import Ticket
+from src.domain.errors import AccesoDenegado
 
 
 TICKET_COLUMNS = (
@@ -41,6 +42,7 @@ class TicketService:
                 "INSERT INTO tickets (titulo, descripcion, estado, id_usuario) VALUES (%s, %s, %s, %s)",
                 (titulo, descripcion, Ticket.ABIERTO, usuario.id))
             ticket_id = cursor.lastrowid
+            self._registrar_actividad(cursor, ticket_id, usuario.id, "CREADO", "Ticket creado.")
         return ticket_id
 
     def listar_mis_tickets(self, offset=0):
@@ -61,7 +63,8 @@ class TicketService:
             return [Ticket(**row) for row in cursor.fetchall()]
 
     def asignar_ticket(self, ticket_id, agente_id):
-        if not self._usuario().es_supervisor():
+        usuario = self._usuario()
+        if not usuario.es_supervisor():
             raise ValueError("Solo un supervisor puede asignar tickets.")
         self._validar_id(ticket_id)
         self._validar_id(agente_id)
@@ -75,21 +78,75 @@ class TicketService:
             if ticket.asignado_a == agente_id:
                 raise ValueError("El ticket ya está asignado a ese agente.")
             ticket.asignar_a(agente_id)
-            cursor.execute("UPDATE tickets SET asignado_a=%s, actualizado_en=%s WHERE id=%s",
-                           (agente_id, ticket.actualizado_en, ticket_id))
+            cursor.execute("UPDATE tickets SET asignado_a=%s, actualizado_en=CURRENT_TIMESTAMP WHERE id=%s",
+                           (agente_id, ticket_id))
             if cursor.rowcount != 1:
                 raise ValueError("No se pudo asignar el ticket.")
+            self._registrar_actividad(cursor, ticket_id, usuario.id, "ASIGNADO",
+                                      f"Ticket asignado al agente #{agente_id}.")
 
     def cambiar_estado(self, ticket_id, nuevo_estado):
         usuario = self._usuario()
         self._validar_id(ticket_id)
         with transaction(get_connection) as cursor:
             ticket = self._buscar_bloqueado(cursor, ticket_id)
+            anterior = ticket.estado
             ticket.cambiar_estado(nuevo_estado, usuario)
-            cursor.execute("UPDATE tickets SET estado=%s, actualizado_en=%s WHERE id=%s",
-                           (ticket.estado, ticket.actualizado_en, ticket_id))
+            cursor.execute("UPDATE tickets SET estado=%s, actualizado_en=CURRENT_TIMESTAMP WHERE id=%s",
+                           (ticket.estado, ticket_id))
             if cursor.rowcount != 1:
                 raise ValueError("No se pudo actualizar el ticket.")
+            self._registrar_actividad(cursor, ticket_id, usuario.id, "ESTADO",
+                                      f"Estado: {anterior} → {ticket.estado}.")
+
+    def obtener_ticket(self, ticket_id):
+        usuario = self._usuario()
+        self._validar_id(ticket_id)
+        with transaction(get_connection) as cursor:
+            cursor.execute(f"SELECT {TICKET_COLUMNS} FROM tickets WHERE id=%s", (ticket_id,))
+            row = cursor.fetchone()
+            if row is None:
+                raise ValueError("Ticket inexistente.")
+            ticket = Ticket(**row)
+            self._exigir_acceso(ticket, usuario)
+            return ticket
+
+    def listar_actividad(self, ticket_id, offset=0):
+        usuario = self._usuario()
+        self._validar_id(ticket_id)
+        self._validar_pagina(offset)
+        with transaction(get_connection) as cursor:
+            ticket = self._buscar_bloqueado(cursor, ticket_id)
+            self._exigir_acceso(ticket, usuario)
+            cursor.execute(
+                "SELECT a.id, a.tipo, a.contenido, a.creado_en, u.username AS autor "
+                "FROM ticket_actividad a JOIN usuarios u ON u.id=a.usuario_id "
+                "WHERE a.ticket_id=%s ORDER BY a.id DESC LIMIT 50 OFFSET %s", (ticket_id, offset))
+            return cursor.fetchall()
+
+    def agregar_comentario(self, ticket_id, contenido):
+        usuario = self._usuario()
+        self._validar_id(ticket_id)
+        contenido = contenido.strip()
+        if not 1 <= len(contenido) <= 5000:
+            raise ValueError("El comentario debe tener entre 1 y 5000 caracteres.")
+        with transaction(get_connection) as cursor:
+            ticket = self._buscar_bloqueado(cursor, ticket_id)
+            self._exigir_acceso(ticket, usuario)
+            if not ticket.puede_comentarse():
+                raise ValueError("No se puede comentar un ticket cerrado.")
+            self._registrar_actividad(cursor, ticket_id, usuario.id, "COMENTARIO", contenido)
+
+    @staticmethod
+    def _exigir_acceso(ticket, usuario):
+        if not (usuario.es_supervisor() or usuario.id in (ticket.creado_por, ticket.asignado_a)):
+            raise AccesoDenegado("No tiene acceso a este ticket.")
+
+    @staticmethod
+    def _registrar_actividad(cursor, ticket_id, usuario_id, tipo, contenido):
+        cursor.execute(
+            "INSERT INTO ticket_actividad (ticket_id, usuario_id, tipo, contenido) VALUES (%s, %s, %s, %s)",
+            (ticket_id, usuario_id, tipo, contenido))
 
     @staticmethod
     def _buscar_bloqueado(cursor, ticket_id):

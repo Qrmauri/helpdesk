@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% from 'components.html' import icon, csrf, pagination %}
+{% block title %}Equipo y roles{% endblock %}
+{% block section %}Equipo{% endblock %}
+{% block content %}
+<div class="page-heading"><div><span class="eyebrow">ADMINISTRACIÓN</span><h1>Equipo y roles</h1><p>Define quién publica, atiende y supervisa las solicitudes.</p></div></div>
+<div class="notice neutral">{{ icon('users',19) }} Antes de cambiar el rol de un agente, reasigna sus tickets activos.</div>
+<section class="panel"><div class="panel-heading"><h2>Usuarios registrados</h2><span class="subtle-label">Página {{ page }}</span></div><div class="table-scroll"><table><caption class="sr-only">Usuarios y roles</caption><thead><tr><th>Usuario</th><th>ID</th><th>Rol actual</th><th>Cambiar rol</th></tr></thead><tbody>{% for user in users %}<tr><td><div class="user-name"><span class="avatar">{{ user.username[0]|upper }}</span><strong>{{ user.username }}</strong></div></td><td>#{{ user.id }}</td><td><span class="role-label">{{ user.role|capitalize }}</span></td><td>{% if user.id == current_user.id %}<span class="muted">Tu cuenta</span>{% else %}<form method="post" class="inline-form" action="{{ url_for('change_role', user_id=user.id) }}">{{ csrf() }}<label class="sr-only" for="role-{{ user.id }}">Rol de {{ user.username }}</label><select id="role-{{ user.id }}" name="role">{% for role in ['PUBLICADOR','AGENTE','SUPERVISOR'] %}<option value="{{ role }}" {% if role == user.role %}selected{% endif %}>{{ role|capitalize }}</option>{% endfor %}</select><button class="button secondary">Guardar</button></form>{% endif %}</td></tr>{% else %}<tr><td colspan="4">No hay usuarios en esta página.</td></tr>{% endfor %}</tbody></table></div></section>
+{{ pagination(page, has_next, 'users') }}
+{% endblock %}

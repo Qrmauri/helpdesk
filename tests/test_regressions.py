@@ -218,7 +218,8 @@ class TicketTests(unittest.TestCase):
         cursor.lastrowid = 42
         with patch("services.ticket_service.get_connection", return_value=conn):
             self.assertEqual(self.service.crear_ticket("Título", "Descripción"), 42)
-        self.assertEqual(cursor.execute.call_args.args[1][-1], self.auth.usuario_actual.id)
+        insert = next(call for call in cursor.execute.call_args_list if "INSERT INTO tickets " in call.args[0])
+        self.assertEqual(insert.args[1][-1], self.auth.usuario_actual.id)
         conn.commit.assert_called_once()
 
     def test_successful_assignment_commits(self):
@@ -229,7 +230,9 @@ class TicketTests(unittest.TestCase):
         with patch("services.ticket_service.get_connection", return_value=conn):
             self.service.asignar_ticket(5, 2)
         conn.commit.assert_called_once()
-        self.assertEqual(cursor.execute.call_args.args[1][0], 2)
+        update = next(call for call in cursor.execute.call_args_list if "UPDATE tickets" in call.args[0])
+        self.assertEqual(update.args[1][0], 2)
+        self.assertEqual(cursor.execute.call_args.args[1][2], "ASIGNADO")
 
     def test_status_change_persists_and_commits(self):
         conn = MagicMock()
@@ -238,7 +241,9 @@ class TicketTests(unittest.TestCase):
         cursor.rowcount = 1
         with patch("services.ticket_service.get_connection", return_value=conn):
             self.service.cambiar_estado(5, "EN_PROCESO")
-        self.assertEqual(cursor.execute.call_args.args[1][0], "EN_PROCESO")
+        update = next(call for call in cursor.execute.call_args_list if "UPDATE tickets" in call.args[0])
+        self.assertEqual(update.args[1][0], "EN_PROCESO")
+        self.assertEqual(cursor.execute.call_args.args[1][2], "ESTADO")
         conn.commit.assert_called_once()
 
 
